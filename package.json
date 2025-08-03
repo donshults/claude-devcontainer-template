@@ -1,0 +1,19 @@
+{
+  "devDependencies": {
+    "markdownlint-cli": "^0.45.0",
+    "prettier": "^3.6.2"
+  },
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "🚀 A professional, reusable DevContainer template for Claude Code projects with Windows support, MCP servers, and comprehensive tooling.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

@@ -89,6 +89,10 @@ fi
 # Set default values
 PROJECT_PATH="${PROJECT_PATH:-$(pwd)}"
 GITHUB_REPO="${GITHUB_REPO:-$PROJECT_NAME}"
+# If PROJECT_PATH is not absolute, use /workspace as default
+if [[ "$PROJECT_PATH" != /* ]]; then
+    PROJECT_PATH="/workspace"
+fi
 FULL_PROJECT_PATH="$PROJECT_PATH/$PROJECT_NAME"
 
 # Check if project already exists
@@ -498,9 +502,9 @@ chmod +x "$FULL_PROJECT_PATH/scripts/post-attach.sh"
 # Update post-attach script with project name
 sed -i "s/\$PROJECT_NAME/$PROJECT_NAME/g" "$FULL_PROJECT_PATH/scripts/post-attach.sh"
 
-# Initialize git repository
+# Initialize git repository with main branch
 cd "$FULL_PROJECT_PATH"
-git init
+git init -b main
 git add .
 git commit -m "Initial commit - Claude DevContainer project setup"
 
@@ -542,6 +546,3 @@ print_color $YELLOW "3. Open in VS Code: code ."
 print_color $YELLOW "4. Reopen in Container when prompted"
 
 print_color $GREEN "\n🎉 Happy coding with Claude!"
-EOF
-
-chmod +x "$FULL_PROJECT_PATH/scripts/init-project.sh"

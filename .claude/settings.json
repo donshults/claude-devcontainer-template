@@ -1,0 +1,12 @@
+{
+  "defaultModel": "opus-4",
+  "alwaysApproveReads": true,
+  "alwaysApproveWrites": false,
+  "alwaysApproveExecutes": false,
+  "enableTelemetry": true,
+  "enableDiagnostics": true,
+  "apiKeySource": "environment",
+  "codeEditBehavior": "diff",
+  "continueConversationInNewBlock": true,
+  "showWelcomeMessage": true
+}

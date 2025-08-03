@@ -21,6 +21,7 @@ test-*/
 temp-*/
 .test-projects/
 
+
 # Build artifacts
 *.zip
 *.tar
@@ -32,6 +33,9 @@ build/
 .env
 .env.local
 *.local
+
+# Claude settings (keep local settings private)
+.claude/settings.local.json
 
 # Logs
 *.log
