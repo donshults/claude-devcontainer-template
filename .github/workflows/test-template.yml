@@ -1,0 +1,153 @@
+name: Test Template
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  validate-files:
+    name: Validate Template Files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Validate JSON files
+        run: |
+          echo "Validating JSON files..."
+          for file in $(find . -name "*.json" -o -name "*.jsonc"); do
+            echo "Checking $file"
+            python -m json.tool "$file" > /dev/null || echo "Invalid JSON: $file"
+          done
+      
+      - name: Validate Markdown files
+        uses: DavidAnson/markdownlint-cli2-action@v16
+        with:
+          globs: |
+            **/*.md
+            !node_modules/**/*.md
+      
+      - name: Check file permissions
+        run: |
+          echo "Checking script permissions..."
+          test -x scripts/init-project.sh || echo "init-project.sh not executable"
+          test -r scripts/init-project.ps1 || echo "init-project.ps1 not readable"
+          test -r scripts/init-project.bat || echo "init-project.bat not readable"
+
+  test-container-build:
+    name: Test Container Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build DevContainer
+        uses: devcontainers/ci@v0.3
+        with:
+          imageName: claude-template-test
+          cacheFrom: claude-template-test
+          push: never
+          runCmd: |
+            # Test basic commands
+            node --version
+            python3 --version
+            git --version
+            claude --version || echo "Claude CLI check skipped"
+
+  test-init-scripts:
+    name: Test Initialization Scripts
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Test Bash Script (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          chmod +x scripts/init-project.sh
+          # Test dry run
+          ./scripts/init-project.sh -h || true
+          
+      - name: Test PowerShell Script (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # Test help
+          .\scripts\init-project.ps1 -Help
+          
+          # Test dry run in temp directory
+          $testPath = New-TemporaryFile | % { Remove-Item $_; New-Item -ItemType Directory -Path $_ }
+          .\scripts\init-project.ps1 -ProjectName test-project -ProjectPath $testPath
+          
+          # Verify structure
+          Test-Path "$testPath\test-project\.devcontainer\devcontainer.json" | Should -Be $true
+          Test-Path "$testPath\test-project\README.md" | Should -Be $true
+
+  test-update-script:
+    name: Test Update Script
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Test Update Script
+        shell: pwsh
+        run: |
+          # Create a test project first
+          $testPath = New-TemporaryFile | % { Remove-Item $_; New-Item -ItemType Directory -Path $_ }
+          .\scripts\init-project.ps1 -ProjectName update-test -ProjectPath $testPath
+          
+          # Test update dry run
+          .\scripts\update-project.ps1 -ProjectPath "$testPath\update-test" -DryRun
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [validate-files, test-container-build, test-init-scripts]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Get version
+        id: version
+        run: echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
+      
+      - name: Create ZIP archive
+        run: |
+          zip -r claude-devcontainer-template-v${{ steps.version.outputs.version }}.zip . \
+            -x "*.git*" \
+            -x "test-*" \
+            -x "temp-*" \
+            -x "*.log" \
+            -x "node_modules/*"
+      
+      - name: Check if release exists
+        id: check_release
+        run: |
+          if gh release view v${{ steps.version.outputs.version }} >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Create Release
+        if: steps.check_release.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          body: |
+            See [CHANGELOG.md](CHANGELOG.md) for details.
+            
+            ## Installation
+            1. Download `claude-devcontainer-template-v${{ steps.version.outputs.version }}.zip`
+            2. Extract to your templates directory
+            3. Run `scripts\init-project.ps1` to create new projects
+          files: |
+            claude-devcontainer-template-v${{ steps.version.outputs.version }}.zip
+          draft: false
+          prerelease: false

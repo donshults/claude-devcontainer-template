@@ -1,0 +1,68 @@
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE files
+.idea/
+*.swp
+*.swo
+*~
+.vscode/*
+!.vscode/settings.json
+
+# Template development specific
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# Test projects created during development
+test-*/
+temp-*/
+.test-projects/
+
+# Build artifacts
+*.zip
+*.tar
+*.tar.gz
+dist/
+build/
+
+# Environment files (for template testing)
+.env
+.env.local
+*.local
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Python (for script testing)
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Coverage reports
+coverage/
+.coverage
+*.lcov
+
+# Documentation build
+docs/_build/
+docs/.doctrees/
+
+# Backup files
+*.backup
+*.bak
+.update-backup-*/
+
+# Local notes
+TODO.local.md
+NOTES.local.md
+.notes/
